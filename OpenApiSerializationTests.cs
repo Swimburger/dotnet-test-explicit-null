@@ -17,7 +17,7 @@ public class OpenApiSerializationTests
         var model = new OpenApiModelExample
         {
             Name = null!, // Invalid state
-            Description = "valid"
+            Description = "valid",
         };
 
         // Act
@@ -32,11 +32,7 @@ public class OpenApiSerializationTests
     public void Case2_RequiredNullable_WithNull_ShouldWriteNull()
     {
         // Arrange: Required nullable with null
-        var model = new OpenApiModelExample
-        {
-            Name = "John",
-            Description = null
-        };
+        var model = new OpenApiModelExample { Name = "John", Description = null };
 
         // Act
         var json = Serialize(model);
@@ -54,7 +50,7 @@ public class OpenApiSerializationTests
         {
             Name = "John",
             Description = "A user",
-            OptionalDescription = Optional<string?>.Of(null)
+            OptionalDescription = Optional<string?>.Of(null),
         };
 
         // Act
@@ -72,7 +68,7 @@ public class OpenApiSerializationTests
         {
             Name = "John",
             Description = "A user",
-            OptionalDescription = Optional<string?>.Undefined
+            OptionalDescription = Optional<string?>.Undefined,
         };
 
         // Act
@@ -90,7 +86,7 @@ public class OpenApiSerializationTests
         {
             Name = "John",
             Description = "A user",
-            OptionalName = Optional<string>.Undefined
+            OptionalName = Optional<string>.Undefined,
         };
 
         // Act
@@ -108,7 +104,7 @@ public class OpenApiSerializationTests
         {
             Name = "John",
             Description = "A user",
-            OptionalName = Optional<string>.Of(null!)
+            OptionalName = Optional<string>.Of(null!),
         };
 
         // Act
@@ -129,7 +125,7 @@ public class OpenApiSerializationTests
             OptionalName = "Johnny",
             OptionalDescription = "Optional description",
             OptionalAge = 30,
-            OptionalScore = 100
+            OptionalScore = 100,
         };
 
         // Act
@@ -152,7 +148,7 @@ public class OpenApiSerializationTests
         {
             Name = "John",
             Description = "A user",
-            OptionalScore = 95
+            OptionalScore = 95,
         };
 
         // Act
@@ -170,7 +166,7 @@ public class OpenApiSerializationTests
         {
             Name = "John",
             Description = "A user",
-            OptionalAge = Optional<int?>.Of(null)
+            OptionalAge = Optional<int?>.Of(null),
         };
 
         // Act
@@ -210,5 +206,142 @@ public class OpenApiSerializationTests
         Assert.That(model, Is.Not.Null);
         Assert.That(model!.OptionalDescription.IsUndefined, Is.True);
         Assert.That(model.OptionalName.IsUndefined, Is.True);
+    }
+
+    [Test]
+    public void OptionalEquality_UndefinedValues_ShouldBeEqual()
+    {
+        // Arrange
+        var opt1 = Optional<string>.Undefined;
+        var opt2 = Optional<string>.Undefined;
+
+        // Assert
+        Assert.That(opt1, Is.EqualTo(opt2));
+        Assert.That(opt1 == opt2, Is.True);
+        Assert.That(opt1 != opt2, Is.False);
+        Assert.That(opt1.GetHashCode(), Is.EqualTo(opt2.GetHashCode()));
+    }
+
+    [Test]
+    public void OptionalEquality_DefinedWithSameValue_ShouldBeEqual()
+    {
+        // Arrange
+        var opt1 = Optional<string>.Of("test");
+        var opt2 = Optional<string>.Of("test");
+
+        // Assert
+        Assert.That(opt1, Is.EqualTo(opt2));
+        Assert.That(opt1 == opt2, Is.True);
+        Assert.That(opt1 != opt2, Is.False);
+        Assert.That(opt1.GetHashCode(), Is.EqualTo(opt2.GetHashCode()));
+    }
+
+    [Test]
+    public void OptionalEquality_DefinedWithDifferentValue_ShouldNotBeEqual()
+    {
+        // Arrange
+        var opt1 = Optional<string>.Of("test1");
+        var opt2 = Optional<string>.Of("test2");
+
+        // Assert
+        Assert.That(opt1, Is.Not.EqualTo(opt2));
+        Assert.That(opt1 == opt2, Is.False);
+        Assert.That(opt1 != opt2, Is.True);
+    }
+
+    [Test]
+    public void OptionalEquality_DefinedVsUndefined_ShouldNotBeEqual()
+    {
+        // Arrange
+        var opt1 = Optional<string>.Of("test");
+        var opt2 = Optional<string>.Undefined;
+
+        // Assert
+        Assert.That(opt1, Is.Not.EqualTo(opt2));
+        Assert.That(opt1 == opt2, Is.False);
+        Assert.That(opt1 != opt2, Is.True);
+    }
+
+    [Test]
+    public void OptionalEquality_BothDefinedWithNull_ShouldBeEqual()
+    {
+        // Arrange
+        var opt1 = Optional<string?>.Of(null);
+        var opt2 = Optional<string?>.Of(null);
+
+        // Assert
+        Assert.That(opt1, Is.EqualTo(opt2));
+        Assert.That(opt1 == opt2, Is.True);
+        Assert.That(opt1.GetHashCode(), Is.EqualTo(opt2.GetHashCode()));
+    }
+
+    [Test]
+    public void UsingOptionalComparer_WithEqualOptionals_ShouldMatch()
+    {
+        // Arrange
+        var model1 = new OpenApiModelExample
+        {
+            Name = "John",
+            Description = "A user",
+            OptionalName = "Johnny",
+            OptionalDescription = Optional<string?>.Of(null),
+            OptionalAge = 30,
+        };
+
+        var model2 = new OpenApiModelExample
+        {
+            Name = "John",
+            Description = "A user",
+            OptionalName = "Johnny",
+            OptionalDescription = Optional<string?>.Of(null),
+            OptionalAge = 30,
+        };
+
+        // Assert
+        Assert.That(model1, Is.EqualTo(model2).UsingDefaults());
+    }
+
+    [Test]
+    public void UsingOptionalComparer_WithDifferentOptionalValues_ShouldNotMatch()
+    {
+        // Arrange
+        var model1 = new OpenApiModelExample
+        {
+            Name = "John",
+            Description = "A user",
+            OptionalName = "Johnny",
+        };
+
+        var model2 = new OpenApiModelExample
+        {
+            Name = "John",
+            Description = "A user",
+            OptionalName = "Johnny2",
+        };
+
+        // Assert
+        Assert.That(model1, Is.Not.EqualTo(model2).UsingDefaults());
+    }
+
+    [Test]
+    public void UsingOptionalComparer_WithDefinedVsUndefined_ShouldNotMatch()
+    {
+        // Arrange
+        var model1 = new OpenApiModelExample
+        {
+            Name = "John",
+            Description = "A user",
+            OptionalName = "Johnny",
+        };
+
+        var model2 = new OpenApiModelExample
+        {
+            Name = "John",
+            Description = "A user",
+            OptionalName = Optional<string>.Undefined,
+        };
+
+        // Assert
+        Assert.That(model1, Is.Not.EqualTo(model2).UsingDefaults());
     }
 }

@@ -50,7 +50,7 @@ public interface IOptional
 /// var request3 = new UpdateUserRequest();  // Will send: {} (name not included)
 /// </code>
 /// </example>
-public readonly struct Optional<T> : IOptional
+public readonly struct Optional<T> : IOptional, IEquatable<Optional<T>>
 {
     private readonly T _value;
     private readonly bool _isDefined;
@@ -225,10 +225,11 @@ public readonly struct Optional<T> : IOptional
     }
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj) =>
-        obj is Optional<T> other
-        && _isDefined == other._isDefined
-        && EqualityComparer<T>.Default.Equals(_value, other._value);
+    public bool Equals(Optional<T> other) =>
+        _isDefined == other._isDefined && EqualityComparer<T>.Default.Equals(_value, other._value);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is Optional<T> other && Equals(other);
 
     /// <inheritdoc/>
     public override int GetHashCode()
@@ -250,8 +251,7 @@ public readonly struct Optional<T> : IOptional
     /// <param name="left">The first Optional to compare.</param>
     /// <param name="right">The second Optional to compare.</param>
     /// <returns>True if the Optional values are equal; otherwise, false.</returns>
-    public static bool operator ==(Optional<T> left, Optional<T> right) =>
-        left.Equals(right);
+    public static bool operator ==(Optional<T> left, Optional<T> right) => left.Equals(right);
 
     /// <summary>
     /// Determines whether two Optional values are not equal.
@@ -259,8 +259,7 @@ public readonly struct Optional<T> : IOptional
     /// <param name="left">The first Optional to compare.</param>
     /// <param name="right">The second Optional to compare.</param>
     /// <returns>True if the Optional values are not equal; otherwise, false.</returns>
-    public static bool operator !=(Optional<T> left, Optional<T> right) =>
-        !left.Equals(right);
+    public static bool operator !=(Optional<T> left, Optional<T> right) => !left.Equals(right);
 }
 
 /// <summary>
@@ -395,14 +394,13 @@ public static class OptionalExtensions
     }
 }
 
-
 /// <summary>
 /// JSON converter factory for Optional<T> that handles undefined vs null correctly.
 /// Uses a TypeInfoResolver to conditionally include/exclude properties based on Optional.IsDefined.
 /// </summary>
 public class OptionalJsonConverterFactory : JsonConverterFactory
 {
-    public override bool CanConvert(Type typeToConvert)
+    public override bool CanConvert(global::System.Type typeToConvert)
     {
         if (!typeToConvert.IsGenericType)
             return false;
@@ -411,13 +409,13 @@ public class OptionalJsonConverterFactory : JsonConverterFactory
     }
 
     public override JsonConverter? CreateConverter(
-        Type typeToConvert,
+        global::System.Type typeToConvert,
         JsonSerializerOptions options
     )
     {
         var valueType = typeToConvert.GetGenericArguments()[0];
         var converterType = typeof(OptionalJsonConverter<>).MakeGenericType(valueType);
-        return (JsonConverter?)Activator.CreateInstance(converterType);
+        return (JsonConverter?)global::System.Activator.CreateInstance(converterType);
     }
 }
 
@@ -429,7 +427,7 @@ public class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
 {
     public override Optional<T> Read(
         ref Utf8JsonReader reader,
-        Type typeToConvert,
+        global::System.Type typeToConvert,
         JsonSerializerOptions options
     )
     {

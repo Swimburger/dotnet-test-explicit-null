@@ -14,6 +14,4 @@ namespace dotnet_test_explicit_null;
 /// - [Optional] Optional<string> → can be undefined or a value (null is invalid)
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-public class OptionalAttribute : Attribute
-{
-}
+public class OptionalAttribute : Attribute { }

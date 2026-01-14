@@ -15,6 +15,4 @@ namespace dotnet_test_explicit_null;
 /// - With [Nullable]: Optional<T?>.Of(null) → write null to JSON
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-public class NullableAttribute : Attribute
-{
-}
+public class NullableAttribute : Attribute { }

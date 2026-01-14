@@ -89,34 +89,37 @@ public static class OpenApiSerializer
             WriteIndented = true,
             // Default: omit null values (unless marked with [Nullable])
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver
-            {
-                Modifiers = { NullableOptionalModifier },
-            },
+            TypeInfoResolver =
+                new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver
+                {
+                    Modifiers = { NullableOptionalModifier },
+                },
         };
         return options;
     }
 
-    private static void NullableOptionalModifier(System.Text.Json.Serialization.Metadata.JsonTypeInfo typeInfo)
+    private static void NullableOptionalModifier(
+        System.Text.Json.Serialization.Metadata.JsonTypeInfo typeInfo
+    )
     {
         if (typeInfo.Kind != System.Text.Json.Serialization.Metadata.JsonTypeInfoKind.Object)
             return;
 
-        var allProperties = typeInfo.Type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
         foreach (var property in typeInfo.Properties)
         {
-            var isOptionalType = property.PropertyType.IsGenericType &&
-                                 property.PropertyType.GetGenericTypeDefinition() == typeof(Optional<>);
-
             var propertyInfo = property.AttributeProvider as PropertyInfo;
 
             if (propertyInfo == null)
                 continue;
 
+            var isOptionalType =
+                property.PropertyType.IsGenericType
+                && property.PropertyType.GetGenericTypeDefinition() == typeof(Optional<>);
+
+            var hasOptionalAttribute = propertyInfo.GetCustomAttribute<OptionalAttribute>() != null;
             var hasNullableAttribute = propertyInfo.GetCustomAttribute<NullableAttribute>() != null;
 
-            if (isOptionalType)
+            if (isOptionalType && hasOptionalAttribute)
             {
                 var originalGetter = property.Get;
                 if (originalGetter != null)
@@ -145,6 +148,7 @@ public static class OpenApiSerializer
             }
             else if (hasNullableAttribute)
             {
+                // Force serialization of nullable properties even when null
                 property.ShouldSerialize = (obj, value) => true;
             }
         }
@@ -174,7 +178,7 @@ public static class OpenApiSerializer
         var case1 = new OpenApiModelExample
         {
             Name = null!, // Invalid state
-            Description = "valid"
+            Description = "valid",
         };
         Console.WriteLine(Serialize(case1));
         Console.WriteLine();
@@ -182,11 +186,7 @@ public static class OpenApiSerializer
         // Case 2: Nullable + null
         Console.WriteLine("Case 2: Required nullable with null");
         Console.WriteLine("  → Written as null in JSON\n");
-        var case2 = new OpenApiModelExample
-        {
-            Name = "John",
-            Description = null
-        };
+        var case2 = new OpenApiModelExample { Name = "John", Description = null };
         Console.WriteLine(Serialize(case2));
         Console.WriteLine();
 
@@ -197,7 +197,7 @@ public static class OpenApiSerializer
         {
             Name = "John",
             Description = "A user",
-            OptionalDescription = Optional<string?>.Of(null)
+            OptionalDescription = Optional<string?>.Of(null),
         };
         Console.WriteLine(Serialize(case3));
         Console.WriteLine();
@@ -209,7 +209,7 @@ public static class OpenApiSerializer
         {
             Name = "John",
             Description = "A user",
-            OptionalDescription = Optional<string?>.Undefined
+            OptionalDescription = Optional<string?>.Undefined,
         };
         Console.WriteLine(Serialize(case4));
         Console.WriteLine();
@@ -221,7 +221,7 @@ public static class OpenApiSerializer
         {
             Name = "John",
             Description = "A user",
-            OptionalName = Optional<string>.Undefined
+            OptionalName = Optional<string>.Undefined,
         };
         Console.WriteLine(Serialize(case5));
         Console.WriteLine();
@@ -233,7 +233,7 @@ public static class OpenApiSerializer
         {
             Name = "John",
             Description = "A user",
-            OptionalName = Optional<string>.Of(null!)
+            OptionalName = Optional<string>.Of(null!),
         };
         Console.WriteLine(Serialize(case6));
         Console.WriteLine();
@@ -248,7 +248,7 @@ public static class OpenApiSerializer
             OptionalName = "Johnny",
             OptionalDescription = "Optional description",
             OptionalAge = 30,
-            OptionalScore = 100
+            OptionalScore = 100,
         };
         Console.WriteLine(Serialize(case7));
         Console.WriteLine();
